@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package ccc;
+import "google/protobuf/struct.proto";
+
+// see https://github.com/bmeg/bmeg-schemas/blob/master/ohsu/schema/core.proto
+message Resource {
+    string type = 1;
+    string name = 2;
+    string location = 3;
+    string mimeType = 4;
+    string checksum = 5;
+    int64 size = 6;
+    string datasetID = 7;
+    string format = 8;
+    string description = 9;
+    string created = 10; // timestamp
+    map<string, google.protobuf.ListValue> info = 11;
+
+    string id = 300;
+    string gid = 301;
+    string class = 302;
+}

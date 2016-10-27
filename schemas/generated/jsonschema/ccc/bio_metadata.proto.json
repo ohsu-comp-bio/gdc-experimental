@@ -1,0 +1,117 @@
+{
+  "definitions": {
+    "InfoEntry": {
+      "type": "object", 
+      "properties": {
+        "key": {
+          "type": "string"
+        }, 
+        "value": {
+          "type": {
+            "$ref": "#.google.protobuf.ListValue"
+          }
+        }
+      }
+    }, 
+    "ccc.Individual.InfoEntry": {
+      "type": "object", 
+      "properties": {
+        "key": {
+          "type": "string"
+        }, 
+        "value": {
+          "type": {
+            "$ref": "#.google.protobuf.ListValue"
+          }
+        }
+      }
+    }, 
+    "Individual": {
+      "type": "object", 
+      "properties": {
+        "id": {
+          "type": "string"
+        }, 
+        "dataset_id": {
+          "type": "string"
+        }, 
+        "name": {
+          "type": "string"
+        }, 
+        "description": {
+          "type": "string"
+        }, 
+        "created": {
+          "type": "string"
+        }, 
+        "updated": {
+          "type": "string"
+        }, 
+        "species": {
+          "type": {
+            "$ref": "#.ccc.OntologyTerm"
+          }
+        }, 
+        "sex": {
+          "type": {
+            "$ref": "#.ccc.OntologyTerm"
+          }
+        }, 
+        "info": {
+          "type": {
+            "$ref": "#.ccc.Individual.InfoEntry"
+          }
+        }
+      }
+    }, 
+    "BioSample": {
+      "type": "object", 
+      "properties": {
+        "id": {
+          "type": "string"
+        }, 
+        "dataset_id": {
+          "type": "string"
+        }, 
+        "name": {
+          "type": "string"
+        }, 
+        "description": {
+          "type": "string"
+        }, 
+        "disease": {
+          "type": {
+            "$ref": "#.ccc.OntologyTerm"
+          }
+        }, 
+        "created": {
+          "type": "string"
+        }, 
+        "updated": {
+          "type": "string"
+        }, 
+        "individual_id": {
+          "type": "string"
+        }, 
+        "info": {
+          "type": {
+            "$ref": "#.ccc.BioSample.InfoEntry"
+          }
+        }
+      }
+    }, 
+    "ccc.BioSample.InfoEntry": {
+      "type": "object", 
+      "properties": {
+        "key": {
+          "type": "string"
+        }, 
+        "value": {
+          "type": {
+            "$ref": "#.google.protobuf.ListValue"
+          }
+        }
+      }
+    }
+  }
+}
