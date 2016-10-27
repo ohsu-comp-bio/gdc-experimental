@@ -1,0 +1,79 @@
+{
+  "definitions": {
+    "InfoEntry": {
+      "type": "object", 
+      "properties": {
+        "key": {
+          "type": "string"
+        }, 
+        "value": {
+          "type": {
+            "$ref": "#.google.protobuf.ListValue"
+          }
+        }
+      }
+    }, 
+    "Resource": {
+      "type": "object", 
+      "properties": {
+        "type": {
+          "type": "string"
+        }, 
+        "name": {
+          "type": "string"
+        }, 
+        "location": {
+          "type": "string"
+        }, 
+        "mimeType": {
+          "type": "string"
+        }, 
+        "checksum": {
+          "type": "string"
+        }, 
+        "size": {
+          "type": "integer"
+        }, 
+        "datasetID": {
+          "type": "string"
+        }, 
+        "format": {
+          "type": "string"
+        }, 
+        "description": {
+          "type": "string"
+        }, 
+        "created": {
+          "type": "string"
+        }, 
+        "info": {
+          "type": {
+            "$ref": "#.ccc.Resource.InfoEntry"
+          }
+        }, 
+        "id": {
+          "type": "string"
+        }, 
+        "gid": {
+          "type": "string"
+        }, 
+        "class": {
+          "type": "string"
+        }
+      }
+    }, 
+    "ccc.Resource.InfoEntry": {
+      "type": "object", 
+      "properties": {
+        "key": {
+          "type": "string"
+        }, 
+        "value": {
+          "type": {
+            "$ref": "#.google.protobuf.ListValue"
+          }
+        }
+      }
+    }
+  }
+}

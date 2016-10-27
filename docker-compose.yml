@@ -1,0 +1,33 @@
+version: '2'
+
+services:
+
+  # implementation of the api described at
+  # https://gdc-docs.nci.nih.gov/API/Users_Guide/Getting_Started/#api-endpoints
+  # Leverages the gdc data dictionary
+  # https://github.com/NCI-GDC/gdcdictionary
+  gdc-api:
+    build:
+      context: gdc-api
+    volumes:
+      - "./gdc-api:/service"
+    ports:
+      - "8000:8000"
+    environment:
+      - CGD_BACKEND_URL=http://gdc-backend:5000/faker
+      - FLASK_DEBUG=1
+      - API_PORT=8000
+    links:
+      - gdc-backend
+
+  # Exposes single endpoint `faker` that accepts a POST request
+  # whose payload is a json-schema.
+  # Creates mock data using response based on request schema.
+  # https://github.com/json-schema-faker
+  gdc-backend:
+    build:
+      context: gdc-backend
+    volumes:
+      - "./gdc-backend:/src/"
+    ports:
+      - "5000:5000"

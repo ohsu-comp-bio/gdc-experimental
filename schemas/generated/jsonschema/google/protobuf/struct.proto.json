@@ -1,0 +1,87 @@
+{
+  "definitions": {
+    "FieldsEntry": {
+      "type": "object", 
+      "properties": {
+        "key": {
+          "type": "string"
+        }, 
+        "value": {
+          "type": {
+            "$ref": "#.google.protobuf.Value"
+          }
+        }
+      }
+    }, 
+    "google.protobuf.Struct.FieldsEntry": {
+      "type": "object", 
+      "properties": {
+        "key": {
+          "type": "string"
+        }, 
+        "value": {
+          "type": {
+            "$ref": "#.google.protobuf.Value"
+          }
+        }
+      }
+    }, 
+    "Struct": {
+      "type": "object", 
+      "properties": {
+        "fields": {
+          "type": {
+            "$ref": "#.google.protobuf.Struct.FieldsEntry"
+          }
+        }
+      }
+    }, 
+    "Value": {
+      "type": "object", 
+      "properties": {
+        "null_value": {
+          "type": {
+            "$ref": "#.google.protobuf.NullValue"
+          }
+        }, 
+        "number_value": {
+          "type": "number"
+        }, 
+        "string_value": {
+          "type": "string"
+        }, 
+        "bool_value": {
+          "type": "BOOL"
+        }, 
+        "struct_value": {
+          "type": {
+            "$ref": "#.google.protobuf.Struct"
+          }
+        }, 
+        "list_value": {
+          "type": {
+            "$ref": "#.google.protobuf.ListValue"
+          }
+        }
+      }
+    }, 
+    "ListValue": {
+      "type": "object", 
+      "properties": {
+        "values": {
+          "type": {
+            "$ref": "#.google.protobuf.Value"
+          }
+        }
+      }
+    }, 
+    "NullValue": {
+      "type": "object", 
+      "properties": {
+        "NULL_VALUE": {
+          "type": 0
+        }
+      }
+    }
+  }
+}
