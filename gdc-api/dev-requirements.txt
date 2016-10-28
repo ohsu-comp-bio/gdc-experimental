@@ -3,5 +3,3 @@ flask
 requests
 # gdc schemas
 git+https://github.com/NCI-GDC/gdcdictionary.git@1966b0a9bf686c662212203b62d111c3a6d64bf5#egg=gdcdictionary
-# ccc schemas
-ccc-schema

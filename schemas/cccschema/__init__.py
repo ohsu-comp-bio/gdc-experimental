@@ -2,18 +2,18 @@
 
 """ provide schemas """
 
-# complete schema will go here
+import fnmatch
+import glob
+import json
+import jsonschema
+import os
+import sys
+
+# complete jsonschemas will go here
 json_schemas = {'definitions': {}}
 
 
 def _init():
-    import fnmatch
-    import glob
-    import json
-    import jsonschema
-    import os
-    import sys
-
     definitions = json_schemas['definitions']
 
     # load all schema fragments
@@ -39,5 +39,5 @@ def json_schema(key):
     """
     return json.dumps(json_schemas['definitions'][key])
 
-
+# load all
 _init()
