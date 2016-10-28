@@ -37,7 +37,7 @@ TYPE = {
 STRING_TYPE = {
  descriptor_pb2.FieldDescriptorProto.TYPE_STRING:  'string'				,
  descriptor_pb2.FieldDescriptorProto.TYPE_DOUBLE:  'number'				,
- descriptor_pb2.FieldDescriptorProto.TYPE_FLOAT:  'FLOAT'				,
+ descriptor_pb2.FieldDescriptorProto.TYPE_FLOAT:  'number'				,
  descriptor_pb2.FieldDescriptorProto.TYPE_INT32:  'integer'				,
  descriptor_pb2.FieldDescriptorProto.TYPE_SINT32:  'integer'				,
  descriptor_pb2.FieldDescriptorProto.TYPE_UINT32:  'integer'				,
@@ -46,8 +46,9 @@ STRING_TYPE = {
  descriptor_pb2.FieldDescriptorProto.TYPE_UINT64:  'integer'				,
  descriptor_pb2.FieldDescriptorProto.TYPE_MESSAGE:  'object'			,
  descriptor_pb2.FieldDescriptorProto.TYPE_BYTES:  'BYTES'				,
- descriptor_pb2.FieldDescriptorProto.TYPE_BOOL:  'BOOL'					,
+ descriptor_pb2.FieldDescriptorProto.TYPE_BOOL:  'boolean'					,
  descriptor_pb2.FieldDescriptorProto.TYPE_ENUM:  'ENUM'					,
+ 0: 'null'
 }
 
 
@@ -99,6 +100,10 @@ def simplify_input(request, type_formatter):
                 }
 
             if isinstance(item, DescriptorProto):
+                item.field.sort(key=lambda x: x.number)
+                # sys.stderr.write("{}\n".format(item.name))
+                # for f in item.field:
+                #     sys.stderr.write("  {} {} \n".format(f.name, f.number))
                 data.update({
                     'type': 'Message',
                     'properties': [{'name': f.name,
@@ -117,6 +122,7 @@ def simplify_input(request, type_formatter):
                                                       nt.name),
                             'nested_type': True
                         }
+                        nt.field.sort(key=lambda x: x.number)
                         extradata.update({
                             'type': 'Message',
                             'properties': [{'name': f.name,
@@ -184,12 +190,19 @@ def generate_jsonschema(request, response):
     given input from compiler, generate response back to compiler.
     use simplify_input's structure to generate json schema
     """
-    def _toTypeName(f):
+    def _toTypeNameRigorous(f):
+        """ rigorous, embedded types are references """
         if f.type_name:
             return {"$ref": "#{}".format(f.type_name)}
         return STRING_TYPE[int(f.type)]
 
-    for proto_file, output in simplify_input(request, _toTypeName):
+    def _toTypeNameSimple(f):
+        """ simplify, embedded types are objects """
+        if f.type_name:
+            return "object"
+        return STRING_TYPE[int(f.type)]
+
+    for proto_file, output in simplify_input(request, _toTypeNameSimple):
         # Fill response
         jsonschema = {"definitions": {}}
         definitions = jsonschema["definitions"]

@@ -7,11 +7,13 @@
 if [[ "$1" != "" ]]; then
     export PROTO_TO_CERBERUS=$1
 else
-    export PROTO_TO_CERBERUS=../generated/cerberus
+    export PROTO_TO_CERBERUS=../cccschema/generated/cerberus
 fi
+
+PROTO_PATH=../cccschema/proto
 
 rm -r $PROTO_TO_CERBERUS 2> /dev/null
 mkdir -p $PROTO_TO_CERBERUS
-protoc --plugin=protoc-gen-custom=custom-plugin.py --proto_path=../proto/ --custom_out=$PROTO_TO_CERBERUS  ../proto/ccc/*.proto
+protoc --plugin=protoc-gen-custom=custom-plugin.py --proto_path=$PROTO_PATH --custom_out=$PROTO_TO_CERBERUS $PROTO_PATH/ccc/*.proto
 echo "cerberus code generated into $PROTO_TO_CERBERUS"
 unset PROTO_TO_CERBERUS

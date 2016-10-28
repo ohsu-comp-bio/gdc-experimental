@@ -7,9 +7,7 @@
           "type": "string"
         }, 
         "value": {
-          "type": {
-            "$ref": "#.google.protobuf.ListValue"
-          }
+          "type": "object"
         }
       }
     }, 
@@ -20,9 +18,7 @@
           "type": "string"
         }, 
         "value": {
-          "type": {
-            "$ref": "#.google.protobuf.ListValue"
-          }
+          "type": "object"
         }
       }
     }, 
@@ -48,19 +44,13 @@
           "type": "string"
         }, 
         "species": {
-          "type": {
-            "$ref": "#.ccc.OntologyTerm"
-          }
+          "type": "object"
         }, 
         "sex": {
-          "type": {
-            "$ref": "#.ccc.OntologyTerm"
-          }
+          "type": "object"
         }, 
         "info": {
-          "type": {
-            "$ref": "#.ccc.Individual.InfoEntry"
-          }
+          "type": "object"
         }
       }
     }, 
@@ -80,9 +70,7 @@
           "type": "string"
         }, 
         "disease": {
-          "type": {
-            "$ref": "#.ccc.OntologyTerm"
-          }
+          "type": "object"
         }, 
         "created": {
           "type": "string"
@@ -94,9 +82,7 @@
           "type": "string"
         }, 
         "info": {
-          "type": {
-            "$ref": "#.ccc.BioSample.InfoEntry"
-          }
+          "type": "object"
         }
       }
     }, 
@@ -107,9 +93,7 @@
           "type": "string"
         }, 
         "value": {
-          "type": {
-            "$ref": "#.google.protobuf.ListValue"
-          }
+          "type": "object"
         }
       }
     }

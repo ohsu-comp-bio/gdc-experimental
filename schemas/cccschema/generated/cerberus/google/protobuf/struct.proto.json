@@ -37,7 +37,7 @@
         "type": "string"
       }, 
       "bool_value": {
-        "type": "BOOL"
+        "type": "boolean"
       }, 
       "struct_value": {
         "type": {

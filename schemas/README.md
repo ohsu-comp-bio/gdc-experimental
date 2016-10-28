@@ -17,3 +17,6 @@ The schemas are based on the GA4GH metadata, plus an addition to support resourc
 ## Utilty
 The cannonical schemas are maintained in protobuf.  The `bin/custom-plugin.py` processes the schemas for alternate uses.
 ![image](https://cloud.githubusercontent.com/assets/47808/19787247/a21d16fe-9c56-11e6-9f2e-523c43653607.png)
+
+## cccschema
+The schemas are packaged into a python module `cccschema`
