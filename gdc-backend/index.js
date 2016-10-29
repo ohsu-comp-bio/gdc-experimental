@@ -18,8 +18,12 @@ app.get('/', function(request, response) {
 
 app.post('/faker', function(request, response) {
   var schema = request.body;
-  var sample = jsf(schema);
-  response.send(sample);
+  var samples = [];
+  var faker_count = request.param('faker_count') || 1;
+  for(count = 0; count < faker_count ; count++){
+    samples.push(jsf(schema));
+   }
+  response.send(samples);
 })
 
 app.listen(app.get('port'), function() {
