@@ -24,7 +24,7 @@ RUN git clone https://github.com/ohsu-computational-biology/gdc-experimental \
   && cd gdc-experimental \
   && git checkout api2 \
   && cd schemas \
-  && pip install ./
+  && pip install -e ./
 
 
 # mounted volume for source
