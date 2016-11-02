@@ -10,19 +10,30 @@ https://github.com/ohsu-computational-biology/gdc-experimental/tree/api2/schemas
 """
 
 import os
-
-from flask import Flask, request, jsonify, Response, json
-from gdcdictionary import gdcdictionary
 import requests
+from flask import Flask, request, jsonify, Response, json
+from flask_cors import CORS, cross_origin
+from string import Template
+from eve import Eve
+
+# JWT
+from base64 import b64decode
+import ast
+import jwt
+from eve.auth import BasicAuth
+
+# for faker
+from gdcdictionary import gdcdictionary
 import cccschema
 
-
+# start the app
 app = Flask(__name__)
+# allow cross site access
+CORS(app)
 
-
-# @app.errorhandler(ValidationError)
-# def on_validation_error(e):
-#     return "error"
+# # # # # # # # # #
+#   API entry points
+# # # # # # # # # #
 
 
 @app.route('/v0/status')
@@ -32,7 +43,8 @@ def status():
       "commit": "snapshot",
       "status": "OK",
       "tag": "1.4.0",
-      "version": 1
+      "version": 1,
+      'user': _getUser()
     })
 
 
@@ -53,7 +65,15 @@ def cases():
 def files():
     """Search & Retrieval Find all files with specific characteristics such
     as file_name, md5sum, data_format and others."""
-    return _cccFakeResponse('Resource')
+    # TODO apply JWT authorization to index string
+    data = _esQuery(index='*-aggregated-resource')
+    app.logger.info(data)
+    r = requests.post(_esURL(),
+                      data=data,
+                      headers={'content-type': 'application/json'})
+    #  TODO https://gdc-docs.nci.nih.gov/API/Users_Guide/Search_and_Retrieval/#files-endpoint # nopep8
+    #  Make response look like GDC
+    return Response(r.text, mimetype='application/json')
 
 
 @app.route('/v0/annotations')
@@ -85,6 +105,136 @@ def submission():
     """Submission Returns the available resources at the top level above
     programs i.e., registered programs"""
     pass
+
+
+# # # # # # # # # #
+# Private util functions
+# # # # # # # # # #
+
+
+def _getUser():
+    user = 'Anonymous'
+    bearer_prefix = 'Bearer '
+    header_token = request.headers.get('authorization')
+    if header_token and header_token.startswith(bearer_prefix):
+        token = header_token[len(bearer_prefix):]
+        ba = BearerAuth()
+        id_dict = ba.parse_token(token)
+        user = "{}.{}".format(id_dict['organization_name'], id_dict['name'])
+    return user
+
+
+class BearerAuth(BasicAuth):
+    """ Override buildin basic auth
+    """
+    def __init__(self):
+        super(BearerAuth, self).__init__()
+
+    def decode_token(self, token):
+        myToken = ast.literal_eval(b64decode(token).decode('UTF-8'))
+        return myToken
+
+    def parse_token(self, token, key='ID_TOKEN'):
+        parsed_token = self.decode_token(token)
+        token_part = parsed_token[key]
+        return jwt.decode(token_part, verify=False)
+
+    def check_auth(self, token, allowed_roles, resource, method):
+        """
+        This function replaces the builting check_auth, and can perform
+        arbitrary actions based on the result of the
+        Access Control Rules Engine.
+        """
+        # send to rule engine
+        rule_engine_result = False
+        # return result of query
+        return rule_engine_result
+
+
+def _esURL():
+    """return the ES url for a search or multi search"""
+    aggregation = request.args.get('aggregation')
+    if (aggregation):
+        return "http://192.168.99.100:9200/_msearch"
+    else:
+        return "http://192.168.99.100:9200/_search"
+
+
+def _esQuery(index):
+    """return the ES query for a search or multi search"""
+    query = request.args.get('q')
+    page = request.args.get('page')
+    aggregation = request.args.get('aggregation')
+    if (aggregation):
+        return _aggregationQuery(query=query, index=index, page=page)
+    else:
+        return _singleQuery(query=query, index=index, page=page)
+
+
+def _singleQuery(query, index='_all', page=1, size=10):
+    """
+     formulate a simple query for ES _search
+     returns a single line query
+    """
+    _from = (int(page)-1) * int(size)
+    if query == '*':
+        # see https://github.com/elastic/elasticsearch/issues/10632
+        t = Template("""{"query": {"match_all": {}}, "from": $from, "size": $size }""")   # nopep8
+    else:
+        t = Template("""{"query":{"simple_query_string":{"query":{"query_string":{"query":"$q"}},"from":$from,"size":$size}}}""")  # nopep8
+    return t.substitute({'q': query, 'index': index,
+                        'from': _from, 'size': size})
+
+
+def _aggregationQuery(query, index='_all', page=1, size=10):
+    """
+    Given a query string, return a set of aggregations for an ES
+    _msearch
+    """
+    t = Template("""
+    {"index":"$index"}
+    $single_query
+    {"index":"$index","search_type":"count","ignore_unavailable":true}
+    {"query":{"filtered":{"query":{"query_string":{"query":"$q","analyze_wildcard":true}},"filter":{"bool":{"must":[{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}}}],"must_not":[]}}}},"size":0,"aggs":{"age_at_diagnosis":{"histogram":{"field":"age_at_diagnosis","interval":10},"aggs":{"3":{"terms":{"field":"projectCode.raw","size":5,"order":{"_count":"desc"}}}}}}}
+    """)  # nopep8
+    return t.substitute({'q': query, 'index': index,
+                         'single_query':
+                         _singleQuery(query, index, page, size)})
+
+# {"index":"$index","search_type":"count","ignore_unavailable":true}
+# {"query":{"filtered":{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}},"filter":{"bool":{"must":[{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}}}],"must_not":[]}}}},"size":0,"aggs":{"2":{"terms":{"field":"individualId.raw","size":20,"order":{"_count":"desc"}}}}}
+# {"index":"$index","search_type":"count","ignore_unavailable":true}
+# {"query":{"filtered":{"query":{"query_string":{"query":"$q","analyze_wildcard":true}},"filter":{"bool":{"must":[{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}}}],"must_not":[]}}}},"size":0,"aggs":{"2":{"terms":{"field":"hugo","size":50,"order":{"_count":"desc"}}}}}
+# {"index":"$index","search_type":"count","ignore_unavailable":true}
+# {"query":{"filtered":{"query":{"query_string":{"query":"$q","analyze_wildcard":true}},"filter":{"bool":{"must":[{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}}}],"must_not":[]}}}},"size":0,"aggs":{"2":{"terms":{"field":"snp","size":50,"order":{"_count":"desc"}}}}}
+# {"index":"$index","search_type":"count","ignore_unavailable":true}
+# {"query":{"filtered":{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}},"filter":{"bool":{"must":[{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}}}],"must_not":[]}}}},"size":0,"aggs":{}}
+# {"index":"$index","search_type":"count","ignore_unavailable":true}
+# {"query":{"filtered":{"query":{"query_string":{"query":"$q","analyze_wildcard":true}},"filter":{"bool":{"must":[{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}}}],"must_not":[]}}}},"size":0,"aggs":{"2":{"terms":{"field":"specimen_type.raw","size":10,"order":{"_count":"desc"}}}}}
+# {"index":"$index","search_type":"count","ignore_unavailable":true}
+# {"query":{"filtered":{"query":{"query_string":{"query":"$q","analyze_wildcard":true}},"filter":{"bool":{"must":[{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}}}],"must_not":[]}}}},"size":0,"aggs":{"2":{"terms":{"field":"mimetype.raw","size":20,"order":{"_count":"desc"}}}}}
+# {"index":"$index","ignore_unavailable":true}
+# {"query":{"filtered":{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}},"filter":{"bool":{"must":[{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}}}],"must_not":[]}}}},"highlight":{"pre_tags":["@kibana-highlighted-field@"],"post_tags":["@/kibana-highlighted-field@"],"fields":{"$q":{}},"require_field_match":false,"fragment_size":2147483647},"size":500,"sort":[{"_score":{"order":"desc","unmapped_type":"boolean"}}],"fields":["$q","_source"],"script_fields":{},"fielddata_fields":[]}
+# {"index":"$index","search_type":"count","ignore_unavailable":true}
+# {"query":{"filtered":{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}},"filter":{"bool":{"must":[{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}}}],"must_not":[]}}}},"size":0,"aggs":{"2":{"terms":{"field":"gender.raw","size":5,"order":{"_count":"desc"}}}}}
+# {"index":"$index","search_type":"count","ignore_unavailable":true}
+# {"query":{"filtered":{"query":{"query_string":{"query":"$q","analyze_wildcard":true}},"filter":{"bool":{"must":[{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}}}],"must_not":[]}}}},"size":0,"aggs":{"1":{"cardinality":{"field":"individualId.raw"}}}}
+# {"index":"$index","search_type":"count","ignore_unavailable":true}
+# {"query":{"filtered":{"query":{"query_string":{"query":"$q","analyze_wildcard":true}},"filter":{"bool":{"must":[{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}}}],"must_not":[]}}}},"size":0,"aggs":{}}
+# {"index":"$index","search_type":"count","ignore_unavailable":true}
+# {"query":{"filtered":{"query":{"query_string":{"query":"$q","analyze_wildcard":true}},"filter":{"bool":{"must":[{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}}}],"must_not":[]}}}},"size":0,"aggs":{"1":{"cardinality":{"field":"sampleId.raw"}}}}
+# {"index":"$index","search_type":"count","ignore_unavailable":true}
+# {"query":{"filtered":{"query":{"query_string":{"query":"$q","analyze_wildcard":true}},"filter":{"bool":{"must":[{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}}}],"must_not":[]}}}},"size":0,"aggs":{"2":{"terms":{"field":"panel_name.raw","size":5,"order":{"_count":"asc"}}}}}
+# {"index":"$index","search_type":"count","ignore_unavailable":true}
+# {"query":{"filtered":{"query":{"query_string":{"query":"$q","analyze_wildcard":true}},"filter":{"bool":{"must":[{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}}}],"must_not":[]}}}},"size":0,"aggs":{"2":{"terms":{"field":"source.raw","size":5,"order":{"1":"desc"}},"aggs":{"1":{"cardinality":{"field":"individualId.raw"}}}}}}
+# {"index":"$index","search_type":"count","ignore_unavailable":true}
+# {"query":{"filtered":{"query":{"query_string":{"query":"$q","analyze_wildcard":true}},"filter":{"bool":{"must":[{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}}}],"must_not":[]}}}},"size":0,"aggs":{"2":{"terms":{"field":"diagnosis.raw","size":5,"order":{"_count":"desc"}}}}}
+# {"index":"$index","search_type":"count","ignore_unavailable":true}
+# {"query":{"filtered":{"query":{"query_string":{"query":"$q","analyze_wildcard":true}},"filter":{"bool":{"must":[{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}}}],"must_not":[]}}}},"size":0,"aggs":{"2":{"terms":{"field":"race.raw","size":10,"order":{"_count":"desc"}}}}}
+# {"index":"$index","search_type":"count","ignore_unavailable":true}
+# {"query":{"filtered":{"query":{"query_string":{"query":"$q","analyze_wildcard":true}},"filter":{"bool":{"must":[{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}}}],"must_not":[]}}}},"size":0,"aggs":{"2":{"terms":{"field":"sampleId.raw","size":50,"order":{"_count":"desc"}}}}}
+# {"index":"$index","search_type":"count","ignore_unavailable":true}
+# {"query":{"filtered":{"query":{"query_string":{"query":"$q","analyze_wildcard":true}},"filter":{"bool":{"must":[{"query":{"query_string":{"analyze_wildcard":true,"query":"$q"}}}],"must_not":[]}}}},"size":0,"aggs":{"2":{"terms":{"field":"projectCode.raw","size":50,"order":{"_count":"desc"}}}}}
 
 
 def _cccFakeResponse(schema_key):

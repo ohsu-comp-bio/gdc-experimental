@@ -1,0 +1,9 @@
+.user_fa {
+    margin-left: 1em;
+}
+
+.json_td div
+{
+  word-wrap:break-word;
+  white-space: normal !important;
+}
