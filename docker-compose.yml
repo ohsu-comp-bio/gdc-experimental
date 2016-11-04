@@ -1,33 +1,91 @@
-version: '2'
+version: '2.0'
 
 services:
 
+
+# UI client of api
+  ui:
+    container_name: ui
+    build:
+      context: services/ui
+      args:
+        - API_URL
+    volumes:
+      - "./services/ui:/src/"
+    ports:
+      - "${UI_PORT}:3000"
+    environment:
+      - API_URL=${API_URL}
+    links:
+      - api
+
+
   # implementation of the api described at
   # https://gdc-docs.nci.nih.gov/API/Users_Guide/Getting_Started/#api-endpoints
-  # Leverages the gdc data dictionary
-  # https://github.com/NCI-GDC/gdcdictionary
-  gdc-api:
+  api:
+    container_name: api
     build:
-      context: gdc-api
+      context: services/api
     volumes:
-      - "./gdc-api:/service"
+      - "./services/api:/service"
     ports:
-      - "8000:8000"
+      - "${API_PORT}:${API_PORT}"
     environment:
-      - CGD_BACKEND_URL=http://gdc-backend:5000/faker
-      - FLASK_DEBUG=1
-      - API_PORT=8000
+      - API_DEBUG=${API_DEBUG}                # if set, the API will run in debug mode
+      - API_PORT=${API_PORT}                  # the port the API should bind to
+      - API_HOST=${API_HOST}                  # the host the API should bind to
+      - FAKER_URL=${FAKER_URL}                # the faker url the API will send requests to
+      - ELASTIC_HOST=${ELASTIC_HOST}          # defaults to localhost
+      - ELASTIC_PORT=${ELASTIC_PORT}          # defaults to 9200
+      - MONGO_HOST=${MONGO_HOST}              # defaults to localhost
+      - MONGO_PORT=${MONGO_PORT}              # defaults to 27017
+      - MONGO_USERNAME=${MONGO_USERNAME}      # defaults to ''
+      - MONGO_PASSWORD=${MONGO_PASSWORD}      # defaults to ''
+      - MONGO_DBNAME=${MONGO_DBNAME}          # defaults to 'test'
     links:
-      - gdc-backend
+      - faker
+      - mongo
+      - elastic
 
-  # Exposes single endpoint `faker` that accepts a POST request
+
+  # Mongo DB
+  mongo:
+    container_name: mongo
+    image: "mongo:latest"
+    volumes:
+      - "./util:/util/"
+    ports:
+      - "${MONGO_PORT}:${MONGO_PORT}"
+
+  # Elastic Search
+  elastic:
+    container_name: elastic
+    build:
+      context: services/elastic/
+    volumes:
+      - "./util:/util/"
+    ports:
+      - "${ELASTIC_PORT}:${ELASTIC_PORT}"
+    command: >
+      elasticsearch
+        --http.port=${ELASTIC_PORT}
+        --network.host=0.0.0.0
+        --transport.host=0.0.0.0
+        --cluster.name=ccc-es
+        --node.name=central
+        --script.inline=on
+        --script.indexed=on
+
+
+  # Exposes single endpoint `/faker` that accepts a POST request
   # whose payload is a json-schema.
   # Creates mock data using response based on request schema.
   # https://github.com/json-schema-faker
-  gdc-backend:
+  faker:
+    container_name: faker
     build:
-      context: gdc-backend
+      context: services/faker
     volumes:
-      - "./gdc-backend:/src/"
+      - "./services/faker:/src/"
     ports:
-      - "5000:5000"
+      - "${FAKER_PORT}:${FAKER_PORT}"

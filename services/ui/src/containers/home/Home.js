@@ -36,8 +36,7 @@ export default class Home extends Component {
 
         <h3>Evolution:</h3>
           <br/>
-          <img alt="evolution" src="https://cloud.githubusercontent.com/assets/47808/19900453/d2521612-a020-11e6-90fe-1c17e7043bda.png" />
-
+          <img alt="evolution" src="https://cloud.githubusercontent.com/assets/47808/20024959/4ad23940-a2a7-11e6-9831-5a59b6f6b732.png" />
           <h3>Whats New</h3>
             <br/>
             <dl>
