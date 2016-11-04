@@ -1,0 +1,23 @@
+.user_fa {
+    margin-left: 1em;
+}
+
+.json_td div
+{
+  word-wrap:break-word;
+  white-space: normal !important;
+}
+
+img.backend  {
+    height:42px;
+    width:42px;
+    margin-left: 0.5em;
+}
+
+span.total {
+  clear:right;
+}
+
+input.backend {
+  margin-left: 0.5em;
+}
