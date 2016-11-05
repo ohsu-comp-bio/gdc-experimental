@@ -1,23 +1,36 @@
 # gdc-experimental
 An exploration of the gdc api.
 
-A very preliminary implementation of the api described at
-https://gdc-docs.nci.nih.gov/API/Users_Guide/Getting_Started/#api-endpoints
+A very preliminary implementation of the api described at:
 
-Leverages the gdc data dictionary
-https://github.com/NCI-GDC/gdcdictionary
+* https://gdc-docs.nci.nih.gov/API/Users_Guide/Getting_Started/#api-endpoints
+
+Leverages:
+
+* gdc data dictionary  https://github.com/NCI-GDC/gdcdictionary
+* ccc data dictionary https://github.com/ohsu-computational-biology/gdc-experimental/tree/api2/schemas
+
+Includes:
+
+* ui - search, projections, sort
+* api - the GDC inspired api
+* backends - both elastic and mongo
+* authentication - jwt and developer login
+* faker - randomized data based on schemas
 
 
-## setup
+## Setup
 ```
 # create an .env file for your environment
 $ cat .env
 # API configuration
-ELASTIC_HOST=192.168.99.100
+UI_PORT=80
+ELASTIC_HOST=elastic
 ELASTIC_PORT=9200
 API_PORT=8000
 API_DEBUG=1
 API_HOST=0.0.0.0
+API_URL=http://api:8000
 FAKER_URL=http://faker:5000/faker
 FAKER_PORT=5000
 MONGO_HOST=mongo
@@ -25,6 +38,8 @@ MONGO_PORT=27017
 MONGO_DBNAME=test
 MONGO_USERNAME=
 MONGO_PASSWORD=
+
+
 
 # verify you have docker-compose installed
 $ docker-compose -v
@@ -35,15 +50,18 @@ $ docker-compose up
 
 # verify docker containers started
 $ docker-compose ps
-Name               Command               State            Ports
--------------------------------------------------------------------------
-api     /bin/sh -c python run.py         Up      0.0.0.0:8000->8000/tcp
-faker   /bin/sh -c supervisor index.js   Up      0.0.0.0:5000->5000/tcp
-mongo   /entrypoint.sh mongod            Up      0.0.0.0:27017->27017/tcp
+ Name                Command               State                Ports
+-----------------------------------------------------------------------------------
+api       /bin/sh -c python run.py         Up      0.0.0.0:8000->8000/tcp
+elastic   /docker-entrypoint.sh elas ...   Up      0.0.0.0:9200->9200/tcp, 9300/tcp
+faker     /bin/sh -c supervisor index.js   Up      0.0.0.0:5000->5000/tcp
+mongo     /entrypoint.sh mongod            Up      0.0.0.0:27017->27017/tcp
+ui        npm start                        Up      0.0.0.0:80->3000/tcp
 
 # load mongo
 # note: the /util directory is mounted from the project directory
-# note: note download aggregated_resource.json from box
+# note: note download aggregated_resource.json from box into ./util directory
+# https://ohsu.box.com/s/hfundkfab9ba202ujp3b415iq5i704x2
 $ docker exec -it mongo bash
 /# cd /util
 /# cat aggregated_resource.json | mongoimport  --db test --collection aggregated_resource
@@ -56,7 +74,8 @@ connecting to: test
 
 # load elastic search
 # note: the /util directory is mounted from the project directory
-# note: note download aggregated_resource.json from box
+# note: note download aggregated_resource.json from box into ./util directory
+# https://ohsu.box.com/s/hfundkfab9ba202ujp3b415iq5i704x2
 $ docker exec -it elastic bash
 /# cd /util
 /# ./load-es.sh
@@ -65,7 +84,9 @@ yellow open test-aggregated-resource 5 1 25340 0 19.4mb 19.4mb
 
 ```
 
-## usage
+Now that the setup is complete,
+
+## Usage
 For example:
 
 ```
@@ -118,6 +139,51 @@ curl $GDC_API/v0-mongo/files | jq .data.hits[0]._id
 "0044f587-b617-4375-bd88-bfee80a4742f"
 
 
+```
+
+## UI
+
+Simple search, with projections
+
+### user search
+![image](https://cloud.githubusercontent.com/assets/47808/20025679/0064d12c-a2ae-11e6-8429-421bbf90d089.png)
 
 
+# Note:  the search interfaces are not equivalent.   
+
+* ES is both `tag` oriented _AND_ `field` oriented.  
+* Mongo is only _AND_ `field` oriented.  
+
+
+## Resulting queries
+### ES
+```
+$ curl $GDC_API'/v0/files?filters=%27BAML%27%20AND%20%27AML-14-00175%27&fields=_id,%20sampleId,%20url&page=1' | jq .data.hits[]._id
+
+"2189ed1d-16a9-4df6-a9d5-3064071eb463"
+"24b7623a-c390-4564-81b3-b04aa355b965"
+"d10f6b6b-d2fd-435d-9623-2e8542d40527"
+"348444c0-8a0c-4d36-9f77-37fd93494aec"
+"268a97ee-f4ed-48c7-ae57-14180d626c04"
+"4b221a03-152d-4b64-a45a-f4fbdfc5b631"
+"923a5fa6-dc84-49fd-9d53-be2e7e4ef672"
+"6aa7af7b-9281-4c15-87be-75fd6895455c"
+"8ead890d-8bf3-48d0-a0a9-138c321ffed2"
+"bd5f743a-3921-4436-91d8-2f9888b16700"
+```
+
+### Mongo
+```
+$ curl -g $GDC_API'/v0-mongo/files?filters={%22$and%22:[{%22projectCode%22:%22BAML%22},{%22sampleId%22:%22AML-14-00175%22}]}&fields={%22_id%22:1,%22sampleId%22:1,%22url%22:1}&page=1' | jq .data.hits[]._id
+
+"e61df931-c4e5-4d3f-9ac0-38a26ef6cce7"
+"a3ee7d82-f357-4083-af78-14180b6edec4"
+"0f6f62b5-b1d9-4880-b2f2-61d2a0bf3783"
+"be9d48cc-e0eb-4c4c-8aae-04d0319a1747"
+"c58235e7-2e2f-4c3b-b56b-db5beae73311"
+"1a9e19c6-97b7-43ac-970a-68d8085b8b20"
+"a1e9102f-ea8e-44f2-949d-a6256440b9b5"
+"d28352b6-6a3c-4055-b412-23dd694addca"
+"eb3e6a6a-705e-4e82-9f21-1b4b8ab60a70"
+"a2277527-7a2b-4689-b6f2-75a1ee968d1a"
 ```
