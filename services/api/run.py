@@ -3,8 +3,6 @@
 """
 Implementation of the gdc api. Relies on gdc-backend, a mock data faker.
 https://gdc-docs.nci.nih.gov/API/Users_Guide/Getting_Started/#api-endpoints
-
-
 """
 
 import os
@@ -62,8 +60,11 @@ def cases():
 
 @app.route('/v0/files')
 def files():
-    """Search & Retrieval Find all files with specific characteristics such
-    as file_name, md5sum, data_format and others."""
+    """
+    Search & Retrieval Find all files with specific characteristics such
+    as file_name, md5sum, data_format and others.
+    See DOMAIN in settings.py for more information on CRUD for this entity
+    """
     return elastic_client.resource_search(request, app)
 
 
