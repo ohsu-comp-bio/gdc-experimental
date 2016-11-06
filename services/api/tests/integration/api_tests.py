@@ -1,15 +1,13 @@
-# import os
-# import unittest
-# import vcr
-# from eve.tests import TestBase
-
-
+#!/usr/bin/env python
 """
     Test API endpoints
 """
 
+# a resource to save.  TODO - test fixtures
+TEST_RESOURCE = {'url': 'foo'}
 
-def test_status(client):
+
+def test_status_returns_ok(client):
     """
     should respond with ok
     """
@@ -19,7 +17,7 @@ def test_status(client):
     assert r.json['user'] == 'Anonymous'
 
 
-def test_authenticated_status(client):
+def test_authenticated_status_returns_user_org_name(client):
     """
     should respond with ok and user
     """
@@ -29,7 +27,7 @@ def test_authenticated_status(client):
     assert r.json['user'] == 'Intel.blc'
 
 
-def test_files_list_es(client):
+def test_files_list_elastic_returns_gdc_formatted_response(client):
     """
     should respond with data.hits of at least one file, pagination
     """
@@ -37,9 +35,10 @@ def test_files_list_es(client):
     _files_list_assertations(r)
 
 
-def test_files_list_mongo(client):
+def deprecated_test_files_list_mongo_returns_gdc_formatted_response(client):
     """
     should respond with data.hits of at least one file, pagination
+    Note: this endpoint was deprecated
     """
     r = client.get('/v0-mongo/files')
     _files_list_assertations(r)
@@ -60,7 +59,32 @@ def _files_list_assertations(r):
     assert all(k in r.json['pagination'] for k in expected_pagination)
 
 
-def test_projects(client):
+def test_files_post_creates_data(client):
+    """
+    We should be able to save a resource
+    """
+    r = client.post('/v0/files', data=TEST_RESOURCE)
+    print r.status_code
+    print r.json
+    assert r.status_code == 201
+    assert r.json['_status'] == 'OK'
+    assert r.json['_id'] is not None
+
+
+def test_files_reads_data(client):
+    """
+    We should be able to save and read a resource
+    """
+    r = client.post('/v0/files', data=TEST_RESOURCE)
+    assert r.status_code == 201
+    assert r.json['_id'] is not None
+    r = client.get('/v0/files/{}'.format(r.json['_id']))
+    assert r.status_code == 200
+    assert r.json['_id'] is not None
+    assert r.json['url'] == TEST_RESOURCE['url']
+
+
+def test_projects_returns_ok(client):
     """
     faker should respond with at least ok and [{}]
     """
@@ -70,7 +94,7 @@ def test_projects(client):
     assert len(r.json) > 0
 
 
-def test_cases(client):
+def test_cases_returns_ok(client):
     """
     faker should respond with at least ok and [{}]
     """
@@ -80,7 +104,7 @@ def test_cases(client):
     assert len(r.json) > 0
 
 
-
+# import vcr
 # @vcr.use_cassette()
 # def test_iana():
 #     response = urllib2.urlopen('http://www.iana.org/domains/reserved').read()

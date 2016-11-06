@@ -36,18 +36,27 @@ QUERY_PROJECTION = 'fields'
 # not used
 HATEOAS = False
 
-API_VERSION = 'v0-mongo'
+API_VERSION = 'v0'
 # important - we don't need to overly specify schemas
 ALLOW_UNKNOWN = True
 
+# *******************
+# schema for /v0/files
+# *******************
 # Simplest possible schema...as long as there is an id
+
+# CRUD is routed to mongo collection aggregated_resource
+
+# Search is routed to flask route /v0/files.
+# (Controlled by resource_methods, note no 'GET')
 file = {
     'schema': {
         '_id': {'type': 'string'}
     },
     'datasource': {
         'source': 'aggregated_resource',
-    }
+    },
+    'resource_methods': ['POST', 'DELETE']
 }
 
 
