@@ -1,4 +1,4 @@
-FROM elasticsearch:latest
+FROM elasticsearch:5.0.0
 
 RUN apt-get update  && \
     apt-get install -y jq vim

@@ -58,6 +58,12 @@ services:
       - "${MONGO_PORT}:${MONGO_PORT}"
 
   # Elastic Search
+  # note: on docker for mac, you may need to adjust the docker-machines' config
+  # if you get this error ....
+  # elastic    | ERROR: bootstrap checks failed
+  # elastic    | max virtual memory areas vm.max_map_count [65530] likely too low, increase to at least [262144]
+  # ... see this
+  # https://github.com/elastic/elasticsearch-docker/blob/master/README.md#osx-with-docker-toolbox
   elastic:
     container_name: elastic
     build:
@@ -68,13 +74,11 @@ services:
       - "${ELASTIC_PORT}:${ELASTIC_PORT}"
     command: >
       elasticsearch
-        --http.port=${ELASTIC_PORT}
-        --network.host=0.0.0.0
-        --transport.host=0.0.0.0
-        --cluster.name=ccc-es
-        --node.name=central
-        --script.inline=on
-        --script.indexed=on
+        -Edefault.http.port=${ELASTIC_PORT}
+        -Edefault.network.host=0.0.0.0
+        -Edefault.transport.host=0.0.0.0
+        -Edefault.cluster.name=ccc-es
+        -Edefault.node.name=central
 
 
   # Exposes single endpoint `/faker` that accepts a POST request
@@ -89,3 +93,17 @@ services:
       - "./services/faker:/src/"
     ports:
       - "${FAKER_PORT}:${FAKER_PORT}"
+
+  # Exposes single endpoint `/faker` that accepts a POST request
+  # whose payload is a json-schema.
+  # Creates mock data using response based on request schema.
+  # https://github.com/json-schema-faker
+  kibana:
+    container_name: kibana5
+    image: "kibana:5.0.0"
+    volumes:
+      - "./services/faker:/src/"
+    ports:
+      - "5601:5601"
+    links:
+      - elastic:elasticsearch
