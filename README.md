@@ -151,10 +151,9 @@ Simple search, with projections
 ![image](https://cloud.githubusercontent.com/assets/47808/20025679/0064d12c-a2ae-11e6-8429-421bbf90d089.png)
 
 
-# Note:  the search interfaces are not equivalent.   
+#### Note:  the search interfaces are not equivalent.   
 
-* ES is both `tag` oriented _AND_ `field` oriented.  (The user does not neeed to know field names and can enter a google style query)
-* Mongo is _only_ `field` oriented.  (The user must know field names in order to sort.)
+See [here](doc/query_tests.md) for more.
 
 
 ## Resulting queries
@@ -175,6 +174,7 @@ $ curl $GDC_API'/v0/files?filters=%27BAML%27%20AND%20%27AML-14-00175%27&fields=_
 ```
 
 ### Mongo
+Note: The `v0-mongo` has been deprecated for now.  This example was left to show that the mongo & elastic endpoints return the same formatted data compliant with GDC
 ```
 $ curl -g $GDC_API'/v0-mongo/files?filters={%22$and%22:[{%22projectCode%22:%22BAML%22},{%22sampleId%22:%22AML-14-00175%22}]}&fields={%22_id%22:1,%22sampleId%22:1,%22url%22:1}&page=1' | jq .data.hits[]._id
 
@@ -199,11 +199,14 @@ that is they test the API with the backends, no mocks exists.
 Therefore, real databases need to exist and the server
 needs to be able to connect to them.
 
+No ui tests exist, for now.
+
 
 ```
 # for some reason, this needs to be set in order to
 # for eve to run ( gets config not found otherwise )
 $ export EVE_SETTINGS=$(pwd)/settings.py
+
 # then start tests
 $ py.test
 platform linux2 -- Python 2.7.11, pytest-3.0.3, py-1.4.31, pluggy-0.4.0
@@ -215,3 +218,32 @@ tests/integration/api_tests.py ......
 6 passed in 0.17 seconds
 
 ```
+
+## Roadmap
+
+Short term tasks
+
+  * more tests ( CRUD, validation )
+
+  * import the oicr/dcc file repository index for a larger, more representative sample
+
+  * ccc_client support
+
+  * updating elastic index [transaction || pipe || batch]
+
+  * summaries: return query summary stats for chart rendering  
+
+  * implement other endpoints /v0/projects /v0/cases ... use mongo for CRUD, elastic for search
+
+  * use nginx for ssl termination and proxy routing, as opposed to currently using the ui development server
+
+  * if ccc-ldap-authentication continues to be months away, consider other authentication sources, perhaps https://pythonhosted.org/Flask-GoogleLogin/
+
+
+Tactical alternatives:
+
+  * reduce the amount of jwt code, perhaps by using [eve-auth-jwt](https://github.com/rs/eve-auth-jwt)
+
+  * consider using [docker compose extends](https://docs.docker.com/compose/extends/) instead of or in addition to .env to manage dev v test v prod and exacloud v sparkdmz.
+
+  * reduce the infrastructure needed for testing, perhaps by using [eve-mocker](https://github.com/tsileo/eve-mocker) and [vcrpy](https://github.com/kevin1024/vcrpy)
