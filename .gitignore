@@ -87,3 +87,9 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# mac stuff
+.DS_Store
+
+# data
+aggregated_resource.json

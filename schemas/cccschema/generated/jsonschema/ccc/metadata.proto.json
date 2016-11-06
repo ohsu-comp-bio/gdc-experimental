@@ -1,0 +1,108 @@
+{
+  "definitions": {
+    "InfoEntry": {
+      "type": "object", 
+      "properties": {
+        "key": {
+          "type": "string"
+        }, 
+        "value": {
+          "type": "object"
+        }
+      }
+    }, 
+    "ccc.Dataset.InfoEntry": {
+      "type": "object", 
+      "properties": {
+        "key": {
+          "type": "string"
+        }, 
+        "value": {
+          "type": "object"
+        }
+      }
+    }, 
+    "Dataset": {
+      "type": "object", 
+      "properties": {
+        "id": {
+          "type": "string"
+        }, 
+        "name": {
+          "type": "string"
+        }, 
+        "description": {
+          "type": "string"
+        }, 
+        "info": {
+          "type": "object"
+        }
+      }
+    }, 
+    "Project": {
+      "type": "object", 
+      "properties": {
+        "id": {
+          "type": "string"
+        }, 
+        "name": {
+          "type": "string"
+        }, 
+        "description": {
+          "type": "string"
+        }, 
+        "info": {
+          "type": "object"
+        }
+      }
+    }, 
+    "ccc.Project.InfoEntry": {
+      "type": "object", 
+      "properties": {
+        "key": {
+          "type": "string"
+        }, 
+        "value": {
+          "type": "object"
+        }
+      }
+    }, 
+    "Program": {
+      "type": "object", 
+      "properties": {
+        "command_line": {
+          "type": "string"
+        }, 
+        "id": {
+          "type": "string"
+        }, 
+        "name": {
+          "type": "string"
+        }, 
+        "prev_program_id": {
+          "type": "string"
+        }, 
+        "version": {
+          "type": "string"
+        }
+      }
+    }, 
+    "OntologyTerm": {
+      "type": "object", 
+      "properties": {
+        "id": {
+          "type": "string"
+        }, 
+        "term": {
+          "type": "string"
+        }, 
+        "source_name": {
+          "type": "string"
+        }, 
+        "source_version": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,109 @@
+version: '2.0'
+
+services:
+
+
+# UI client of api
+  ui:
+    container_name: ui
+    build:
+      context: services/ui
+      args:
+        - API_URL
+    volumes:
+      - "./services/ui:/src/"
+    ports:
+      - "${UI_PORT}:3000"
+    environment:
+      - API_URL=${API_URL}
+    links:
+      - api
+
+
+  # implementation of the api described at
+  # https://gdc-docs.nci.nih.gov/API/Users_Guide/Getting_Started/#api-endpoints
+  api:
+    container_name: api
+    build:
+      context: services/api
+    volumes:
+      - "./services/api:/service"
+    ports:
+      - "${API_PORT}:${API_PORT}"
+    environment:
+      - API_DEBUG=${API_DEBUG}                # if set, the API will run in debug mode
+      - API_PORT=${API_PORT}                  # the port the API should bind to
+      - API_HOST=${API_HOST}                  # the host the API should bind to
+      - FAKER_URL=${FAKER_URL}                # the faker url the API will send requests to
+      - ELASTIC_HOST=${ELASTIC_HOST}          # defaults to localhost
+      - ELASTIC_PORT=${ELASTIC_PORT}          # defaults to 9200
+      - MONGO_HOST=${MONGO_HOST}              # defaults to localhost
+      - MONGO_PORT=${MONGO_PORT}              # defaults to 27017
+      - MONGO_USERNAME=${MONGO_USERNAME}      # defaults to ''
+      - MONGO_PASSWORD=${MONGO_PASSWORD}      # defaults to ''
+      - MONGO_DBNAME=${MONGO_DBNAME}          # defaults to 'test'
+    links:
+      - faker
+      - mongo
+      - elastic
+
+
+  # Mongo DB
+  mongo:
+    container_name: mongo
+    image: "mongo:latest"
+    volumes:
+      - "./util:/util/"
+    ports:
+      - "${MONGO_PORT}:${MONGO_PORT}"
+
+  # Elastic Search
+  # note: on docker for mac, you may need to adjust the docker-machines' config
+  # if you get this error ....
+  # elastic    | ERROR: bootstrap checks failed
+  # elastic    | max virtual memory areas vm.max_map_count [65530] likely too low, increase to at least [262144]
+  # ... see this
+  # https://github.com/elastic/elasticsearch-docker/blob/master/README.md#osx-with-docker-toolbox
+  elastic:
+    container_name: elastic
+    build:
+      context: services/elastic/
+    volumes:
+      - "./util:/util/"
+    ports:
+      - "${ELASTIC_PORT}:${ELASTIC_PORT}"
+    command: >
+      elasticsearch
+        -Edefault.http.port=${ELASTIC_PORT}
+        -Edefault.network.host=0.0.0.0
+        -Edefault.transport.host=0.0.0.0
+        -Edefault.cluster.name=ccc-es
+        -Edefault.node.name=central
+
+
+  # Exposes single endpoint `/faker` that accepts a POST request
+  # whose payload is a json-schema.
+  # Creates mock data using response based on request schema.
+  # https://github.com/json-schema-faker
+  faker:
+    container_name: faker
+    build:
+      context: services/faker
+    volumes:
+      - "./services/faker:/src/"
+    ports:
+      - "${FAKER_PORT}:${FAKER_PORT}"
+
+  # Exposes single endpoint `/faker` that accepts a POST request
+  # whose payload is a json-schema.
+  # Creates mock data using response based on request schema.
+  # https://github.com/json-schema-faker
+  kibana:
+    container_name: kibana5
+    image: "kibana:5.0.0"
+    volumes:
+      - "./services/faker:/src/"
+    ports:
+      - "5601:5601"
+    links:
+      - elastic:elasticsearch
