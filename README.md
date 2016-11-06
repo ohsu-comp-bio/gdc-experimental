@@ -63,11 +63,11 @@ ui        npm start                        Up      0.0.0.0:80->3000/tcp
 # note: note download aggregated_resource.json from box into ./util directory
 # https://ohsu.box.com/s/hfundkfab9ba202ujp3b415iq5i704x2
 $ docker exec -it mongo bash
-/# cd /util
-/# cat aggregated_resource.json | mongoimport  --db test --collection aggregated_resource
+$ cd /util
+$ cat aggregated_resource.json | mongoimport  --db test --collection aggregated_resource
 
 # validate that mongo loaded data
-/# mongo  test -eval 'db.aggregated_resource.count()'
+$ mongo  test -eval 'db.aggregated_resource.count()'
 MongoDB shell version: 3.2.10
 connecting to: test
 25340
@@ -77,10 +77,12 @@ connecting to: test
 # note: note download aggregated_resource.json from box into ./util directory
 # https://ohsu.box.com/s/hfundkfab9ba202ujp3b415iq5i704x2
 $ docker exec -it elastic bash
-/# cd /util
-/# ./load-es.sh
-# curl localhost:9200/_cat/indices
-yellow open test-aggregated-resource 5 1 25340 0 19.4mb 19.4mb
+$ cd /util
+$ ./es-default-mapping.sh
+$ ./es-load.sh
+$ curl localhost:9200/_cat/indices?v
+health status index                    uuid                   pri rep docs.count docs.deleted store.size pri.store.size
+yellow open   test-aggregated-resource PVBAjbvwRl-n3Zt4UWQ7xg   5   1      25340            0     41.2mb         41.2mb
 
 ```
 
@@ -151,8 +153,8 @@ Simple search, with projections
 
 # Note:  the search interfaces are not equivalent.   
 
-* ES is both `tag` oriented _AND_ `field` oriented.  
-* Mongo is only _AND_ `field` oriented.  
+* ES is both `tag` oriented _AND_ `field` oriented.  (The user does not neeed to know field names and can enter a google style query)
+* Mongo is _only_ `field` oriented.  (The user must know field names in order to sort.)
 
 
 ## Resulting queries
@@ -186,4 +188,30 @@ $ curl -g $GDC_API'/v0-mongo/files?filters={%22$and%22:[{%22projectCode%22:%22BA
 "d28352b6-6a3c-4055-b412-23dd694addca"
 "eb3e6a6a-705e-4e82-9f21-1b4b8ab60a70"
 "a2277527-7a2b-4689-b6f2-75a1ee968d1a"
+```
+
+
+## Testing
+Is very preliminary at this time.
+
+The tests that do exist are integration tests,
+that is they test the API with the backends, no mocks exists.
+Therefore, real databases need to exist and the server
+needs to be able to connect to them.
+
+
+```
+# for some reason, this needs to be set in order to
+# for eve to run ( gets config not found otherwise )
+$ export EVE_SETTINGS=$(pwd)/settings.py
+# then start tests
+$ py.test
+platform linux2 -- Python 2.7.11, pytest-3.0.3, py-1.4.31, pluggy-0.4.0
+rootdir: /service, inifile: pytest.ini
+plugins: flask-0.10.0
+collected 6 items
+
+tests/integration/api_tests.py ......
+6 passed in 0.17 seconds
+
 ```
