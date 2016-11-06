@@ -20,11 +20,17 @@ import eve_util
 import faker_client
 
 
-# start the app
-app = Eve()
-# allow cross site access
-CORS(app)
+def _configure_app():
+    # start the app
+    app = Eve()
+    # allow cross site access
+    CORS(app)
+    # add GDC formatter to response
+    app.on_fetched_resource += eve_util.mongo_to_GDC
+    # eve doesn't support standard "flask run", so set props here
+    return app
 
+app = _configure_app()
 
 # API entry points
 
@@ -126,11 +132,7 @@ def _development_login():
 
 # Entry point of app
 if __name__ == '__main__':
-    # add GDC formatter to response
-    app.on_fetched_resource += eve_util.mongo_to_GDC
-    # eve doesn't support standard "flask run", so set props here
     debug = 'API_DEBUG' in os.environ
     api_port = int(os.environ.get('API_PORT', '5000'))
     api_host = os.environ.get('API_HOST', '0.0.0.0')
-
     app.run(debug=debug, port=api_port, host=api_host)
