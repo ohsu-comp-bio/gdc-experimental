@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 # load elastic dump output into mongo
