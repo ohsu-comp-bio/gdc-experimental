@@ -6,6 +6,7 @@ Query elastic
 """
 import os
 import requests
+import urllib
 from string import Template
 from flask import Flask, request, jsonify, Response, json
 
@@ -25,6 +26,7 @@ def resource_search(request, app):
     # TODO apply JWT authorization to index string
     data = _esQuery('*-aggregated-resource',
                     query, page, fields, sort, size, aggregation)
+
     app.logger.info(data)  # log the query
 
     r = requests.post(_esURL('*-aggregated-resource', aggregation),
@@ -55,9 +57,14 @@ def resource_search(request, app):
                 'size': size,
             }
             del response['hits']
-
+            #  setup warnings
+        if 'error' in response:
+            app.logger.info('error in response')
+            response['warnings'] = response['error']['caused_by']
+            del response['error']
         return json.dumps(response)
 
+    app.logger.info(r.text)  # log the raw response
     return Response(_es_to_GDC(r.text), mimetype='application/json')
 
 
@@ -65,11 +72,6 @@ def normalize_parameters(request):
     """ retrieve parameters from request, set defaults """
     # query parameter should be in the form
     # https://gdc-docs.nci.nih.gov/API/Users_Guide/Search_and_Retrieval/#filters-specifying-the-query
-    # client side mongo queries
-    # https://github.com/tj/node-monquery
-    # other
-    # https://bitbucket.org/elarson/mgoquery
-
     # sort parameter
     # https://gdc-docs.nci.nih.gov/API/Users_Guide/Search_and_Retrieval/#sort
 
@@ -122,7 +124,7 @@ def _singleQuery(query, index='_all', page=1, size=10,
     _from = (int(page)-1) * int(size)
     # projection
     if fields:
-        # see https://www.elastic.co/guide/en/elasticsearch/reference/2.3/search-request-source-filtering.html  # nopep8
+        # see https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-source-filtering.html  # nopep8
         fields = fields.replace(" ", "")
         fields = '"_source":' + json.dumps(fields.split(',')) + ', '
     else:
@@ -142,11 +144,7 @@ def _singleQuery(query, index='_all', page=1, size=10,
     else:
         sort = ''
 
-    if query == '*':
-        # see https://github.com/elastic/elasticsearch/issues/10632
-        t = Template("""{$fields "query": {"match_all": {}}, "from": $from, "size": $size $sort}""")   # nopep8
-    else:
-        t = Template("""{$fields "query":{"simple_query_string":{"query":{"query_string":{"query":"$q"}},"from":$from,"size":$size $sort}}}""")  # nopep8
+    t = Template("""{$fields "query":{"query_string":{"analyze_wildcard":true,"query":"$q"}},"from":$from,"size":$size $sort}""")  # nopep8
     return t.substitute({'q': query, 'index': index, 'from': _from,
                          'size': size, 'fields': fields, 'sort': sort})
 

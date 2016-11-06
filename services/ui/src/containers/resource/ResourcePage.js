@@ -377,9 +377,9 @@ class ResourcesPage extends Component {
             }
 
             {
-              resources && resources.warning &&
+              resources && resources.warnings &&
               <div className="alert alert-danger">
-                {resources.responses[0].error.type}
+                {JSON.stringify(resources)}
               </div>
             }
 
