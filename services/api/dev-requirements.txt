@@ -7,3 +7,6 @@ flask-cors
 # auth
 PyJWT
 eve
+vcrpy
+pytest
+pytest-flask
