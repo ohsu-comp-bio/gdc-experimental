@@ -1,25 +1,27 @@
-# gdc-experimental
-An exploration of the gdc api.
+# dms.gdc
 
-A very preliminary implementation of the api described at:
-
-* https://gdc-docs.nci.nih.gov/API/Users_Guide/Getting_Started/#api-endpoints
+A very preliminary exploratory implementation of the api described by [GDC](https://gdc-docs.nci.nih.gov/API/Users_Guide/Getting_Started/#api-endpoints)
 
 Leverages:
 
-* gdc data dictionary  https://github.com/NCI-GDC/gdcdictionary
-* ccc data dictionary https://github.com/ohsu-computational-biology/gdc-experimental/tree/api2/schemas
+* [gdc data dictionary](https://github.com/NCI-GDC/gdcdictionary)
+* [ccc data dictionary](./schemas)
 
 Includes:
 
-* ui - search, projections, sort
-* api - the GDC inspired api
+* [ui](./services/ui) - search, projections, sort
+* [api](./services/api) - the GDC inspired api
 * backends - both elastic and mongo
 * authentication - jwt and developer login
-* faker - randomized data based on schemas
+* [faker](./services/faker) - randomized data based on schemas
 
+![image](https://cloud.githubusercontent.com/assets/47808/20076880/ee939774-a4ee-11e6-9b9a-eebb1a055915.png)
+
+For more information on DMS vision, requirements and architectures, see this [presentation](https://ohsu.box.com/s/qeh94ia44t5ztdpv5pnz9aqwz6zevpic)
 
 ## Setup
+
+### env variables
 ```
 # create an .env file for your environment
 $ cat .env
@@ -38,17 +40,30 @@ MONGO_PORT=27017
 MONGO_DBNAME=test
 MONGO_USERNAME=
 MONGO_PASSWORD=
+```
 
+### docker
 
+We use [docker compose extends](https://docs.docker.com/compose/extends/) in addition to .env to manage dev v test. Additional overrides can be developed for different contexts... prod and exacloud v sparkdmz.
 
+```
 # verify you have docker-compose installed
 $ docker-compose -v
 docker-compose version 1.8.1, build 878cff1
 
 # start docker
-$ docker-compose up
+# note: the base configuration is maintained in `docker-compose.yml`
+# separate overrides are added in the development yml
+$ docker-compose -f docker-compose.yml -f docker-compose.development.yml up
+```
 
-# verify docker containers started
+note: on docker for mac, you may need to adjust the docker-machines' config.
+If you get this error ....
+`max virtual memory areas vm.max_map_count [65530] likely too low, increase to at least [262144]`
+, see [this](https://github.com/elastic/elasticsearch-docker/blob/master/README.md#osx-with-docker-toolbox)
+
+### verify container start
+```
 $ docker-compose ps
  Name                Command               State                Ports
 -----------------------------------------------------------------------------------
@@ -57,11 +72,14 @@ elastic   /docker-entrypoint.sh elas ...   Up      0.0.0.0:9200->9200/tcp, 9300/
 faker     /bin/sh -c supervisor index.js   Up      0.0.0.0:5000->5000/tcp
 mongo     /entrypoint.sh mongod            Up      0.0.0.0:27017->27017/tcp
 ui        npm start                        Up      0.0.0.0:80->3000/tcp
+```
 
-# load mongo
-# note: the /util directory is mounted from the project directory
-# note: note download aggregated_resource.json from box into ./util directory
-# https://ohsu.box.com/s/hfundkfab9ba202ujp3b415iq5i704x2
+### load data
+note: the /util directory is mounted from the project directory.
+Download [aggregated_resource.json](https://ohsu.box.com/s/hfundkfab9ba202ujp3b415iq5i704x2) from box into ./util directory
+
+#### mongo
+```
 $ docker exec -it mongo bash
 $ cd /util
 $ cat aggregated_resource.json | mongoimport  --db test --collection aggregated_resource
@@ -71,11 +89,10 @@ $ mongo  test -eval 'db.aggregated_resource.count()'
 MongoDB shell version: 3.2.10
 connecting to: test
 25340
+```
 
-# load elastic search
-# note: the /util directory is mounted from the project directory
-# note: note download aggregated_resource.json from box into ./util directory
-# https://ohsu.box.com/s/hfundkfab9ba202ujp3b415iq5i704x2
+#### elastic
+```
 $ docker exec -it elastic bash
 $ cd /util
 $ ./es-default-mapping.sh
@@ -86,10 +103,9 @@ yellow open   test-aggregated-resource PVBAjbvwRl-n3Zt4UWQ7xg   5   1      25340
 
 ```
 
-Now that the setup is complete,
 
 ## Usage
-For example:
+Now that the setup is complete, here are some examples:
 
 ```
 # set to your host
@@ -133,11 +149,11 @@ curl $GDC_API/v0/status  -H "Authorization: Bearer eyJBQ0NFU1NfVE9LRU4iOiJleUpoY
 
 # verify that either backend returns equivalent data
 # query the endpoint (ES)
-curl $GDC_API/v0/files | jq .data.hits[0]._id
+curl -s $GDC_API/v0/files | jq .data.hits[0]._id
 "0044f587-b617-4375-bd88-bfee80a4742f"
 
 # query the endpoint (MONGO)
-curl $GDC_API/v0-mongo/files | jq .data.hits[0]._id
+curl -s $GDC_API/v0/files-mongo | jq .data.hits[0]._id
 "0044f587-b617-4375-bd88-bfee80a4742f"
 
 
@@ -151,10 +167,9 @@ Simple search, with projections
 ![image](https://cloud.githubusercontent.com/assets/47808/20025679/0064d12c-a2ae-11e6-8429-421bbf90d089.png)
 
 
-# Note:  the search interfaces are not equivalent.   
+#### Note:  the search interfaces are not equivalent.   
 
-* ES is both `tag` oriented _AND_ `field` oriented.  (The user does not neeed to know field names and can enter a google style query)
-* Mongo is _only_ `field` oriented.  (The user must know field names in order to sort.)
+See [here](doc/query_tests.md) for more.
 
 
 ## Resulting queries
@@ -175,8 +190,9 @@ $ curl $GDC_API'/v0/files?filters=%27BAML%27%20AND%20%27AML-14-00175%27&fields=_
 ```
 
 ### Mongo
+Note: The `/v0/files-mongo` was created to show that the mongo & elastic endpoints return the same formatted data compliant with GDC.
 ```
-$ curl -g $GDC_API'/v0-mongo/files?filters={%22$and%22:[{%22projectCode%22:%22BAML%22},{%22sampleId%22:%22AML-14-00175%22}]}&fields={%22_id%22:1,%22sampleId%22:1,%22url%22:1}&page=1' | jq .data.hits[]._id
+$ curl -g $GDC_API'/v0/files-mongo?filters={%22$and%22:[{%22projectCode%22:%22BAML%22},{%22sampleId%22:%22AML-14-00175%22}]}&fields={%22_id%22:1,%22sampleId%22:1,%22url%22:1}&page=1' | jq .data.hits[]._id
 
 "e61df931-c4e5-4d3f-9ac0-38a26ef6cce7"
 "a3ee7d82-f357-4083-af78-14180b6edec4"
@@ -199,19 +215,54 @@ that is they test the API with the backends, no mocks exists.
 Therefore, real databases need to exist and the server
 needs to be able to connect to them.
 
+No ui tests exist, for now.
+
 
 ```
+# run tests from container
+$ docker exec -it api  bash
+
 # for some reason, this needs to be set in order to
 # for eve to run ( gets config not found otherwise )
 $ export EVE_SETTINGS=$(pwd)/settings.py
+
 # then start tests
 $ py.test
 platform linux2 -- Python 2.7.11, pytest-3.0.3, py-1.4.31, pluggy-0.4.0
 rootdir: /service, inifile: pytest.ini
 plugins: flask-0.10.0
-collected 6 items
+collected 9 items
 
 tests/integration/api_tests.py ......
-6 passed in 0.17 seconds
+9 passed in 0.17 seconds
 
 ```
+
+## Roadmap
+
+Short term tasks
+
+  * more tests ( CRUD, validation )
+
+  * import the oicr/dcc file repository index for a larger, more representative sample
+
+  * ccc_client support /v0/submission
+
+  * updating elastic index from mongo [transaction || pipe || batch].  use kafka?
+
+  * summaries: return query summary stats for chart rendering  
+
+  * implement other endpoints /v0/projects /v0/cases ... use mongo for CRUD, elastic for search
+
+  * make UI linkable (place search params, etc in UI's url)
+
+  * use nginx for ssl termination and proxy routing, as opposed to currently using the ui development server
+
+  * if ccc-ldap-authentication continues to be months away, consider other authentication sources, perhaps https://pythonhosted.org/Flask-GoogleLogin/
+
+
+Tactical alternatives:
+
+  * reduce the amount of jwt code, perhaps by using [eve-auth-jwt](https://github.com/rs/eve-auth-jwt)
+
+  * reduce the infrastructure needed for testing, perhaps by using [eve-mocker](https://github.com/tsileo/eve-mocker) and [vcrpy](https://github.com/kevin1024/vcrpy)
