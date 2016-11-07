@@ -1,0 +1,38 @@
+version: '2.0'
+
+services:
+
+  # override settings in the base api compose definition
+  api:
+    environment:
+      - API_DEBUG=${API_DEBUG}                # if set, the API will run in debug mode
+    links:
+      - faker
+
+
+  # Exposes single endpoint `/faker` that accepts a POST request
+  # whose payload is a json-schema.
+  # Creates mock data using response based on request schema.
+  # https://github.com/json-schema-faker
+  faker:
+    container_name: faker
+    build:
+      context: services/faker
+    volumes:
+      - "./services/faker:/src/"
+    ports:
+      - "${FAKER_PORT}:${FAKER_PORT}"
+
+  # Exposes single endpoint `/faker` that accepts a POST request
+  # whose payload is a json-schema.
+  # Creates mock data using response based on request schema.
+  # https://github.com/json-schema-faker
+  kibana:
+    container_name: kibana5
+    image: "kibana:5.0.0"
+    volumes:
+      - "./services/faker:/src/"
+    ports:
+      - "5601:5601"
+    links:
+      - elastic:elasticsearch

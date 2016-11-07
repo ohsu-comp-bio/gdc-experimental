@@ -31,7 +31,6 @@ services:
     ports:
       - "${API_PORT}:${API_PORT}"
     environment:
-      - API_DEBUG=${API_DEBUG}                # if set, the API will run in debug mode
       - API_PORT=${API_PORT}                  # the port the API should bind to
       - API_HOST=${API_HOST}                  # the host the API should bind to
       - FAKER_URL=${FAKER_URL}                # the faker url the API will send requests to
@@ -43,7 +42,6 @@ services:
       - MONGO_PASSWORD=${MONGO_PASSWORD}      # defaults to ''
       - MONGO_DBNAME=${MONGO_DBNAME}          # defaults to 'test'
     links:
-      - faker
       - mongo
       - elastic
 
@@ -79,31 +77,3 @@ services:
         -Edefault.transport.host=0.0.0.0
         -Edefault.cluster.name=ccc-es
         -Edefault.node.name=central
-
-
-  # Exposes single endpoint `/faker` that accepts a POST request
-  # whose payload is a json-schema.
-  # Creates mock data using response based on request schema.
-  # https://github.com/json-schema-faker
-  faker:
-    container_name: faker
-    build:
-      context: services/faker
-    volumes:
-      - "./services/faker:/src/"
-    ports:
-      - "${FAKER_PORT}:${FAKER_PORT}"
-
-  # Exposes single endpoint `/faker` that accepts a POST request
-  # whose payload is a json-schema.
-  # Creates mock data using response based on request schema.
-  # https://github.com/json-schema-faker
-  kibana:
-    container_name: kibana5
-    image: "kibana:5.0.0"
-    volumes:
-      - "./services/faker:/src/"
-    ports:
-      - "5601:5601"
-    links:
-      - elastic:elasticsearch
