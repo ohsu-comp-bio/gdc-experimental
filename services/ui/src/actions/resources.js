@@ -73,7 +73,7 @@ function resourcesFailure(page) {
 
 function fetchTopResources(page, query, fields, sort, backend='elastic' ) {
   if (backend==='elastic') {
-    return _elasticfetchTopResources(page, query, fields, sort);        
+    return _elasticfetchTopResources(page, query, fields, sort);
   } else {
     return _mongofetchTopResources(page, query, fields, sort);
   }
@@ -105,7 +105,7 @@ function _mongofetchTopResources(page, query, fields, sort) {
   // http://python-eve.org/features.html#sorting
   // http://python-eve.org/features.html#pagination
 
-  const url = _addParams('/v0-mongo/files', page, query, fields, sort);
+  const url = _addParams('/v0/files-mongo', page, query, fields, sort);
   const resp = callApi(url, null, resourcesRequest(page),
                        resourcesSuccess(page), resourcesFailure(page));
   return resp;
