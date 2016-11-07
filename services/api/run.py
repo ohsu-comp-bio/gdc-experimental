@@ -25,7 +25,8 @@ def _configure_app():
     CORS(app)
     # add GDC formatter to response
     app.on_fetched_resource += eve_util.mongo_to_GDC
-    # eve doesn't support standard "flask run", so set props here
+    # submission helper
+    app.on_insert_submission += eve_util.on_insert_submission
     return app
 
 app = _configure_app()
@@ -92,11 +93,12 @@ def slicing():
     pass
 
 
-@app.route('/v0/submission')
-def submission():
-    """Submission Returns the available resources at the top level above
-    programs i.e., registered programs"""
-    pass
+# @app.route('/v0/submission/<program_name>/<project_code>')
+# def submission(program_name, project_code):
+#     """Submission Returns the available resources at the top level above
+#     programs i.e., registered programs"""
+#     # call Eve-hooks consumers for this  event
+#     return getattr(app, "submission_eve_fetched")()
 
 
 @app.route('/api/logout', methods=['POST'])
@@ -133,6 +135,7 @@ def _development_login():
 
 # Entry point of app
 if __name__ == '__main__':
+    # eve doesn't support standard "flask run", so set props here
     debug = 'API_DEBUG' in os.environ
     api_port = int(os.environ.get('API_PORT', '5000'))
     api_host = os.environ.get('API_HOST', '0.0.0.0')

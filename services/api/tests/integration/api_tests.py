@@ -3,13 +3,10 @@
     Test API endpoints
 """
 
-# a resource to save.  TODO - test fixtures
-TEST_RESOURCE = {'url': 'foo'}
-
 
 def test_status_returns_ok(client):
     """
-    should respond with ok
+    should respond with ok and Anonymous
     """
     r = client.get('/v0/status')
     assert r.status_code == 200
@@ -35,12 +32,12 @@ def test_files_list_elastic_returns_gdc_formatted_response(client):
     _files_list_assertations(r)
 
 
-def deprecated_test_files_list_mongo_returns_gdc_formatted_response(client):
+def test_files_list_mongo_returns_gdc_formatted_response(client):
     """
     should respond with data.hits of at least one file, pagination
-    Note: this endpoint was deprecated
+    Note: this endpoint exists only to compare es v mongo queries
     """
-    r = client.get('/v0-mongo/files')
+    r = client.get('/v0/files-mongo')
     _files_list_assertations(r)
 
 
@@ -64,8 +61,6 @@ def test_files_post_creates_data(client):
     We should be able to save a resource
     """
     r = client.post('/v0/files', data=TEST_RESOURCE)
-    print r.status_code
-    print r.json
     assert r.status_code == 201
     assert r.json['_status'] == 'OK'
     assert r.json['_id'] is not None
@@ -82,6 +77,14 @@ def test_files_reads_data(client):
     assert r.status_code == 200
     assert r.json['_id'] is not None
     assert r.json['url'] == TEST_RESOURCE['url']
+
+
+def test_submission_checks_program_project(client):
+    """
+    We should not be able to save a submission with a bad program or project
+    """
+    r = client.post('/v0/submission/foo/bar', data=TEST_BAD_SUBMISSION)
+    assert r.status_code == 404
 
 
 def test_projects_returns_ok(client):
@@ -104,11 +107,6 @@ def test_cases_returns_ok(client):
     assert len(r.json) > 0
 
 
-# import vcr
-# @vcr.use_cassette()
-# def test_iana():
-#     response = urllib2.urlopen('http://www.iana.org/domains/reserved').read()
-#     assert 'Example domains' in response
-#
-# if __name__ == '__main__':
-#     unittest.main()
+# a resource to save.  TODO - test fixtures
+TEST_RESOURCE = {'url': 'foo'}
+TEST_BAD_SUBMISSION = {'bob': 'your uncle'}

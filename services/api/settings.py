@@ -36,7 +36,9 @@ QUERY_PROJECTION = 'fields'
 # not used
 HATEOAS = False
 
+# conform with GDC
 API_VERSION = 'v0'
+
 # important - we don't need to overly specify schemas
 ALLOW_UNKNOWN = True
 
@@ -49,6 +51,7 @@ ALLOW_UNKNOWN = True
 
 # Search is routed to flask route /v0/files.
 # (Controlled by resource_methods, note no 'GET')
+# TODO - '_id' used for test data, normalize to 'id'
 file = {
     'schema': {
         '_id': {'type': 'string'}
@@ -59,9 +62,61 @@ file = {
     'resource_methods': ['POST', 'DELETE']
 }
 
+# stub for testing elastic v mongo search. TODO remove
+file_mongo = {
+    'schema': {
+        '_id': {'type': 'string'}
+    },
+    'datasource': {
+        'source': 'aggregated_resource',
+    },
+    'resource_methods': ['GET', 'POST', 'DELETE']
+}
+
+program = {
+    'schema': {
+        'id': {'type': 'string'},
+        'name': {'type': 'string'},
+        'code': {'type': 'string'},
+    },
+    'datasource': {
+        'source': 'program',
+    }
+}
+
+project = {
+    'schema': {
+        'id': {'type': 'string'},
+        'name': {'type': 'string'},
+        'code': {'type': 'string'},
+    },
+    'datasource': {
+        'source': 'project',
+    }
+}
+
+submission = {
+    'url': 'submission/<regex(".*"):program_name>/<regex(".*"):project_code>/',
+    'schema': {
+        'id': {'type': 'string'},
+        'type': {'type': 'string'},
+        'submitter_id': {'type': 'string'},
+        'program_name': {'type': 'string'},
+        'project_code': {'type': 'string'},
+    },
+    'datasource': {
+        'source': 'submission',
+    },
+    'resource_methods': ['GET', 'POST', 'DELETE']
+}
+
 
 # The DOMAIN dict explains which resources will be available and how they will
 # be accessible to the API consumer.
 DOMAIN = {
     'files': file,
+    'files-mongo': file_mongo,   # stub for testing elastic v mongo search
+    'submission': submission,
+    'project': project,
+    'program': program,
 }
