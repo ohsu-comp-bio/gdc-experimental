@@ -101,7 +101,7 @@ Done.
 
 ### Mongo:
 
-?
+? Left as an excercise for the reader.
 
 
 ## Summary
@@ -113,6 +113,7 @@ Obvious impacts of syntax aside, consider prerequisite to to understand the data
 
 
 As a consequence of user friendliness, the Elastic interface is more `provider friendly`.  The user interaction with the data model is more malleable and less disruptive.  Since users are more self sufficient, engineering resources can be utilized elsewhere.  Adoption of the mongo interface for search will result in:
+
   * Higher costs for:
     * Training
     * Informatician support
