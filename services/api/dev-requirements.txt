@@ -1,12 +1,10 @@
 # std python modules
-flask
-requests
+Flask==0.10.1
+Eve==0.6.4
+requests==2.11.1
+Flask-Cors==3.0.2
+PyJWT==1.4.2
+pytest==3.0.3
+pytest-flask==0.10.0
 # gdc schemas
 git+https://github.com/NCI-GDC/gdcdictionary.git@1966b0a9bf686c662212203b62d111c3a6d64bf5#egg=gdcdictionary
-flask-cors
-# auth
-PyJWT
-eve
-vcrpy
-pytest
-pytest-flask
